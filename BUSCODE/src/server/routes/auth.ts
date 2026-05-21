@@ -1,54 +1,101 @@
-import { Router } from 'express';
+import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import prisma from '../db';
+import prisma from '../db'; // Import par défaut maintenant correct
 
-const router = Router();
+const router = express.Router();
+
+// Interface pour le payload du token
+interface JwtPayload {
+  id: string;
+  email: string;
+  role: 'CLIENT' | 'COMPANY' | 'ADMIN';
+}
 
 // Inscription
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName, phone, role } = req.body;
-    
+    const { email, password, name, role, phone } = req.body;
+
+    // Vérifier si l'utilisateur existe déjà
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email déjà utilisé' });
+      return res.status(400).json({ message: 'Cet email est déjà utilisé.' });
     }
 
+    // Hacher le mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
+    // Créer l'utilisateur
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, firstName, lastName, phone, role: role || 'CLIENT' }
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        role: role || 'CLIENT',
+        phone,
+      },
     });
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: process.env.JWT_EXPIRES_IN });
-    
-    res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
+    // Générer le token
+    const secret = process.env.JWT_SECRET || 'secret';
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      secret,
+      { expiresIn: '7d' } as jwt.SignOptions
+    );
+
+    res.status(201).json({
+      message: 'Utilisateur créé avec succès',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('Erreur inscription:', error);
+    res.status(500).json({ message: 'Erreur serveur lors de l\'inscription' });
   }
 });
 
 // Connexion
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    
+
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.status(401).json({ error: 'Identifiants invalides' });
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Identifiants invalides' });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: process.env.JWT_EXPIRES_IN });
-    
-    res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
+    const secret = process.env.JWT_SECRET || 'secret';
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      secret,
+      { expiresIn: '7d' } as jwt.SignOptions
+    );
+
+    res.json({
+      message: 'Connexion réussie',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('Erreur connexion:', error);
+    res.status(500).json({ message: 'Erreur serveur lors de la connexion' });
   }
 });
 

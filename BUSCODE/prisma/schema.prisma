@@ -13,7 +13,7 @@ enum UserRole {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   email     String   @unique
   password  String
   firstName String
@@ -22,68 +22,77 @@ model User {
   role      UserRole @default(CLIENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
+  // Relations
+  company  Company? // Si l'utilisateur est lié à une compagnie
   bookings Booking[]
-  company  Company? // Si role = COMPANY
 }
 
 model Company {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  logo        String?
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-  buses       Bus[]
-  trips       Trip[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  email     String   @unique
+  phone     String?
+  address   String?
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  owner   User?   @relation(fields: [ownerId], references: [id])
+  ownerId String? @unique
+  buses   Bus[]
+  trips   Trip[]
 }
 
 model Bus {
-  id         String   @id @default(uuid())
-  plateNumber String
-  capacity   Int
-  companyId  String
-  company    Company  @relation(fields: [companyId], references: [id])
-  seats      Seat[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String  @id @default(cuid())
+  plateNumber String  @unique
+  capacity    Int
+  type        String  @default("Standard") // Standard, VIP, etc.
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+
+  // Relation inverse ajoutée ici
+  trips Trip[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Trip {
-  id         String   @id @default(uuid())
-  departure  String
-  arrival    String
-  departureDate DateTime
-  price      Float
-  companyId  String
-  company    Company  @relation(fields: [companyId], references: [id])
-  busId      String
-  bus        Bus      @relation(fields: [busId], references: [id])
-  bookings   Booking[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
+  id          String   @id @default(cuid())
+  origin      String
+  destination String
+  departureAt DateTime
+  arrivalAt   DateTime
+  price       Float
+  status      String   @default("SCHEDULED") // SCHEDULED, ONGOING, COMPLETED, CANCELLED
 
-model Seat {
-  id        String   @id @default(uuid())
-  number    String
-  busId     String
-  bus       Bus      @relation(fields: [busId], references: [id])
-  bookings  Booking[]
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  busId String
+  bus   Bus    @relation(fields: [busId], references: [id])
+
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Booking {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  tripId    String
-  trip      Trip     @relation(fields: [tripId], references: [id])
-  seatId    String
-  seat      Seat     @relation(fields: [seatId], references: [id])
-  status    String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  seatNumber String
+  status     String @default("CONFIRMED") // CONFIRMED, CANCELLED, PENDING
   totalPrice Float
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

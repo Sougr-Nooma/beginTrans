@@ -1,3 +1,13 @@
+// const prisma = new PrismaClient({
+//   datasources: {
+//     db: {
+//       url: process.env.DATABASE_URL || "file:./dev.db",
+//     },
+//   },
+// });
+
+import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient({
   datasources: {
     db: {
@@ -5,3 +15,5 @@ const prisma = new PrismaClient({
     },
   },
 });
+
+export default prisma;

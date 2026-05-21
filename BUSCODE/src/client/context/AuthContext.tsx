@@ -1,77 +1,78 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 
-interface User {
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+export interface User {
   id: string;
   email: string;
+  firstName: string;
+  lastName: string;
   role: 'CLIENT' | 'COMPANY' | 'ADMIN';
+  token: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  loading: boolean;
+  login: (email: string, password: string, role: 'CLIENT' | 'COMPANY') => Promise<void>;
+  register: (data: any, role: 'CLIENT' | 'COMPANY') => Promise<void>;
   logout: () => void;
-  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (token && userData) {
-      setUser(JSON.parse(userData));
+    const storedUser = localStorage.getItem('fasobus_user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
-    setIsLoading(false);
+    setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setUser(data.user);
+  const login = async (email: string, password: string, role: 'CLIENT' | 'COMPANY') => {
+    try {
+      const res = await axios.post(`${API_URL}/auth/login`, { email, password, role });
+      const userData = res.data;
+      setUser(userData);
+      localStorage.setItem('fasobus_user', JSON.stringify(userData));
+    } catch (error) {
+      console.error("Login failed", error);
+      throw new Error("Échec de la connexion");
+    }
   };
 
-  const register = async (userData: any) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setUser(data.user);
+  const register = async (data: any, role: 'CLIENT' | 'COMPANY') => {
+    try {
+      const payload = { ...data, role };
+      const res = await axios.post(`${API_URL}/auth/register`, payload);
+      const userData = res.data;
+      setUser(userData);
+      localStorage.setItem('fasobus_user', JSON.stringify(userData));
+    } catch (error) {
+      console.error("Register failed", error);
+      throw new Error("Échec de l'inscription");
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
     setUser(null);
+    localStorage.removeItem('fasobus_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
-}
+};
