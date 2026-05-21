@@ -1,0 +1,66 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "sqlite" // Nous utilisons SQLite pour le développement local facile (pas de serveur à installer)
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Modèle pour les Voyageurs (Clients)
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Mot de passe haché
+  firstName String
+  lastName  String
+  phone     String   // Téléphone requis (pour validation Mobile Money)
+  role      String   @default("CLIENT") // CLIENT | ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bookings  Booking[]
+}
+
+// 2. Modèle pour les Compagnies de Bus partenaires (TSR, Elitis, etc.)
+model Company {
+  id          String   @id // ex: "tsr", "elitis" (ID court unique saisi à l'enregistrement)
+  name        String
+  phone       String
+  email       String   @unique
+  password    String   // Mot de passe d'administration rattaché à l'ID
+  description String?
+  address     String?
+  logo        String?  // URL du logo de la compagnie
+  rating      Float    @default(5.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  trips       Trip[]   // Les trajets rattachés à cette compagnie
+}
+
+// 3. Modèle pour les Trajets de bus (Programmes futurs)
+model Trip {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  departure   String   // Ville de départ (ex: Ouagadougou)
+  arrival     String   // Ville d'arrivée (ex: Bobo-Dioulasso)
+  date        DateTime
+  price       Float
+  availableSeats Int
+  bookings    Booking[]
+}
+
+// 4. Modèle pour les Réservations de billets
+model Booking {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id])
+  seatsBooked Int      @default(1)
+  status      String   @default("PENDING") // PENDING | CONFIRMED | CANCELLED
+  paymentId   String?  // Réf de paiement Mobile Money
+  createdAt   DateTime @default(now())
+}

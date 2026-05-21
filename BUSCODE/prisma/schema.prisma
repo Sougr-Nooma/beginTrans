@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum UserRole {
+  CLIENT
+  COMPANY
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  role      UserRole @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  bookings Booking[]
+  company  Company? // Si role = COMPANY
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  logo        String?
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  buses       Bus[]
+  trips       Trip[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Bus {
+  id         String   @id @default(uuid())
+  plateNumber String
+  capacity   Int
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  seats      Seat[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Trip {
+  id         String   @id @default(uuid())
+  departure  String
+  arrival    String
+  departureDate DateTime
+  price      Float
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  busId      String
+  bus        Bus      @relation(fields: [busId], references: [id])
+  bookings   Booking[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Seat {
+  id        String   @id @default(uuid())
+  number    String
+  busId     String
+  bus       Bus      @relation(fields: [busId], references: [id])
+  bookings  Booking[]
+}
+
+model Booking {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id])
+  seatId    String
+  seat      Seat     @relation(fields: [seatId], references: [id])
+  status    String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  totalPrice Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
