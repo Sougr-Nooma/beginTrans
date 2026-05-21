@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Correction de l'erreur ImportMeta.env
+const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api';
 
 export interface User {
   id: string;
@@ -12,11 +13,21 @@ export interface User {
   token: string;
 }
 
+// Interface pour les données d'inscription (sans le rôle qui est passé séparément)
+export interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  companyName?: string; // Optionnel si c'est une compagnie
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string, role: 'CLIENT' | 'COMPANY') => Promise<void>;
-  register: (data: any, role: 'CLIENT' | 'COMPANY') => Promise<void>;
+  register: (data: RegisterData, role: 'CLIENT' | 'COMPANY') => Promise<void>;
   logout: () => void;
 }
 
@@ -40,22 +51,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = res.data;
       setUser(userData);
       localStorage.setItem('fasobus_user', JSON.stringify(userData));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed", error);
-      throw new Error("Échec de la connexion");
+      throw new Error(error.response?.data?.message || "Échec de la connexion");
     }
   };
 
-  const register = async (data: any, role: 'CLIENT' | 'COMPANY') => {
+  // Correction : La fonction attend maintenant explicitement data et role
+  const register = async (data: RegisterData, role: 'CLIENT' | 'COMPANY') => {
     try {
+      // On fusionne les données avec le rôle pour l'envoi au backend
       const payload = { ...data, role };
+      
       const res = await axios.post(`${API_URL}/auth/register`, payload);
       const userData = res.data;
       setUser(userData);
       localStorage.setItem('fasobus_user', JSON.stringify(userData));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Register failed", error);
-      throw new Error("Échec de l'inscription");
+      throw new Error(error.response?.data?.message || "Échec de l'inscription");
     }
   };
 
