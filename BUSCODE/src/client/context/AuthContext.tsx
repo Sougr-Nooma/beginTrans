@@ -1,71 +1,58 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Définir les types
+type Role = 'CLIENT' | 'COMPANY' | 'ADMIN';
 
-export interface User {
+interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: 'CLIENT' | 'COMPANY' | 'ADMIN';
-  token: string;
+  name: string;
+  role: Role;
 }
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  login: (email: string, password: string, role: 'CLIENT' | 'COMPANY') => Promise<void>;
-  register: (data: any, role: 'CLIENT' | 'COMPANY') => Promise<void>;
+  token: string | null;
+  login: (token: string, userData: User) => void;
   logout: () => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('fasobus_user');
-    if (storedUser) {
+    // Récupérer les infos depuis le localStorage au chargement
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+
+    if (storedToken && storedUser) {
+      setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
-    setLoading(false);
+    setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string, role: 'CLIENT' | 'COMPANY') => {
-    try {
-      const res = await axios.post(`${API_URL}/auth/login`, { email, password, role });
-      const userData = res.data;
-      setUser(userData);
-      localStorage.setItem('fasobus_user', JSON.stringify(userData));
-    } catch (error) {
-      console.error("Login failed", error);
-      throw new Error("Échec de la connexion");
-    }
-  };
-
-  const register = async (data: any, role: 'CLIENT' | 'COMPANY') => {
-    try {
-      const payload = { ...data, role };
-      const res = await axios.post(`${API_URL}/auth/register`, payload);
-      const userData = res.data;
-      setUser(userData);
-      localStorage.setItem('fasobus_user', JSON.stringify(userData));
-    } catch (error) {
-      console.error("Register failed", error);
-      throw new Error("Échec de l'inscription");
-    }
+  const login = (newToken: string, userData: User) => {
+    setToken(newToken);
+    setUser(userData);
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
+    setToken(null);
     setUser(null);
-    localStorage.removeItem('fasobus_user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -73,6 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  if (context === undefined) {
+    throw new Error('useAuth doit être utilisé dans un AuthProvider');
+  }
   return context;
 };
