@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT || 3001);
+  const PORT = 3000;
 
   // Middleware for parsing JSON
   app.use(express.json());
@@ -46,4 +46,3 @@ startServer().catch((err) => {
   console.error("Failed to start server:", err);
   process.exit(1);
 });
-

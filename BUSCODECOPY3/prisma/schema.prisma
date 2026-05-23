@@ -6,26 +6,18 @@ datasource db {
   provider = "sqlite"
 }
 
-enum UserRole {
-  CLIENT
-  COMPANY
-  ADMIN
-}
-
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   password  String
   firstName String
   lastName  String
   phone     String?
   role      UserRole @default(CLIENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  company  Company? // Si l'utilisateur est lié à une compagnie
-  bookings Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+  company   Company?
 }
 
 model Company {
@@ -38,61 +30,56 @@ model Company {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  owner   User?   @relation(fields: [ownerId], references: [id])
-  ownerId String? @unique
-  buses   Bus[]
-  trips   Trip[]
+  ownerId   String?  @unique
+  buses     Bus[]
+  owner     User?    @relation(fields: [ownerId], references: [id])
+  trips     Trip[]
 }
 
 model Bus {
-  id          String  @id @default(cuid())
-  plateNumber String  @unique
+  id          String   @id @default(cuid())
+  plateNumber String   @unique
   capacity    Int
-  type        String  @default("Standard") // Standard, VIP, etc.
+  type        String   @default("Standard")
   companyId   String
-  company     Company @relation(fields: [companyId], references: [id])
-
-  // Relation inverse ajoutée ici
-  trips Trip[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id])
+  trips       Trip[]
 }
 
 model Trip {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   origin      String
   destination String
   departureAt DateTime
   arrivalAt   DateTime
   price       Float
-  status      String   @default("SCHEDULED") // SCHEDULED, ONGOING, COMPLETED, CANCELLED
-
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id])
-
-  busId String
-  bus   Bus    @relation(fields: [busId], references: [id])
-
-  bookings Booking[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status      String    @default("SCHEDULED")
+  companyId   String
+  busId       String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+  bus         Bus       @relation(fields: [busId], references: [id])
+  company     Company   @relation(fields: [companyId], references: [id])
 }
 
 model Booking {
-  id     String @id @default(cuid())
-  tripId String
-  trip   Trip   @relation(fields: [tripId], references: [id])
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
+  id         String   @id @default(cuid())
+  tripId     String
+  userId     String
   seatNumber String
-  status     String @default("CONFIRMED") // CONFIRMED, CANCELLED, PENDING
+  status     String   @default("CONFIRMED")
   totalPrice Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+  trip       Trip     @relation(fields: [tripId], references: [id])
+}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum UserRole {
+  CLIENT
+  COMPANY
+  ADMIN
 }
