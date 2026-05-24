@@ -16,7 +16,8 @@ cd backend
 npm install
 copy .env.example .env
 npx prisma generate
-npx prisma migrate dev --name init
+npx prisma migrate dev
+npm run db:seed
 ```
 
 ### 2. Frontend
@@ -49,11 +50,25 @@ npm run dev
 
 ## Authentification
 
-- Page : http://localhost:5173/auth
-- **Client** → après succès : `/dashboard-client`
-- **Compagnie** → après succès : `/dashboard-compagnie`
-- Mots de passe hashés (bcrypt), token JWT renvoyé par l’API
+- **Client / Compagnie** : http://localhost:5173/auth
+  - Client → après succès : `/dashboard-client`
+  - Compagnie → après succès : `/dashboard-compagnie`
+- **Administration** (URL directe uniquement) : http://localhost:5173/admin-login
+  - Admin → après succès : `/admin-dashboard`
+  - Compte seed : `admin@fasobus.bf` / `admin123` (`npm run db:seed`)
+- Mots de passe hashés (bcrypt), token JWT avec `role` renvoyé par l’API
 - Modèle Prisma unifié : `User` avec rôles `CLIENT` | `COMPANY` | `ADMIN`
+
+### Routes frontend
+
+| Route | Accès |
+|-------|-------|
+| `/` | Public (visiteurs) |
+| `/auth` | Connexion client / compagnie |
+| `/dashboard-client` | Guard CLIENT |
+| `/dashboard-compagnie` | Guard COMPANY |
+| `/admin-login` | Connexion admin (non liée depuis l’accueil) |
+| `/admin-dashboard` | Guard ADMIN |
 
 ### Routes API
 
@@ -64,6 +79,7 @@ npm run dev
 | POST | `/api/auth/login-client` |
 | POST | `/api/auth/register-company` |
 | POST | `/api/auth/login-company` |
+| POST | `/api/auth/login-admin` |
 
 ## Variables d'environnement
 
