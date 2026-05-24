@@ -3,8 +3,8 @@ dist/
 .env
 *.log
 
-# Ancien monolithe (si restes)
-src/
+# Ancien monolithe à la racine BuscodeCursor uniquement (pas frontend/src)
+/src/
 prisma/dev.db
 
 backend/node_modules/

@@ -98,7 +98,9 @@ FRONTEND_URL="http://localhost:5173"
 VITE_API_URL=http://localhost:5000/api
 ```
 
-## Scripts utiles
+## Dépannage design (Tailwind)
+
+Si l’interface apparaît sans styles, vérifiez que le `.gitignore` **ne ignore pas** `frontend/src/`. Tailwind v4 exclut les fichiers listés dans `.gitignore` du scan des classes. Le fichier `src/index.css` contient des directives `@source` explicites en secours.
 
 ```powershell
 # Backend
