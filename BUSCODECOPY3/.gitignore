@@ -1,4 +1,17 @@
-node_modules
-/dist
+node_modules/
+dist/
 .env
+*.log
 
+# Ancien monolithe à la racine BuscodeCursor uniquement (pas frontend/src)
+/src/
+prisma/dev.db
+
+backend/node_modules/
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/.env
+
+frontend/node_modules/
+frontend/dist/
+frontend/.env

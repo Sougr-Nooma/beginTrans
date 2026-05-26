@@ -79,7 +79,12 @@ npm run dev
 | POST | `/api/auth/login-client` |
 | POST | `/api/auth/register-company` |
 | POST | `/api/auth/login-company` |
-| POST | `/api/auth/login-admin` |
+| GET | `/api/companies` |
+| GET | `/api/trips` |
+| GET | `/api/stats` |
+| GET | `/api/special-offers` |
+| GET | `/api/job-offers` |
+| POST/PUT/DELETE | `/api/companies`, `/api/trips`, etc. |
 
 ## Variables d'environnement
 
