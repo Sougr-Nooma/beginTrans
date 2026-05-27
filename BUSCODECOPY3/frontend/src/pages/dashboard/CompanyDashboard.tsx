@@ -49,7 +49,6 @@ export function CompanyDashboard() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] font-sans text-gray-900">
-      <Navbar variant="company" currentUser={user} onLogout={handleLogout} />
       <main className="pt-16">
         <AdminDashboard
           currentUser={user}

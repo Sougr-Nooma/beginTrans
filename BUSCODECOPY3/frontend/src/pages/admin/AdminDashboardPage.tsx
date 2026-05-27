@@ -51,7 +51,6 @@ export function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] font-sans text-gray-900">
-      <Navbar variant="admin" currentUser={user} onLogout={handleLogout} />
       <main className="pt-16">
         <AdminDashboard
           currentUser={user}
